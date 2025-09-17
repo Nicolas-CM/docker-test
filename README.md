@@ -1,71 +1,86 @@
-# Getting Started with Create React App 
+# Rick and Morty Character Viewer - Reporte de Implementación Docker
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
-hi
+Se configuró Docker y GitHub Actions para CI/CD sobre una aplicación React existente que consume la API de Rick and Morty, permitiendo visualizar información sobre los personajes de la serie.
 
-## Available Scripts
+## Proceso de Implementación
 
-In the project directory, you can run:
+### 1. Fork del Repositorio
+Se realizó un fork del repositorio original para obtener una copia independiente del código base:
+![Fork del repositorio](images/fork.png)
 
-### `npm start`
+### 2. Dockerfile
+Se implementó un Dockerfile multi-stage para optimizar el tamaño de la imagen final. Esta estrategia permitió separar el proceso de construcción del entorno de producción:
+![Dockerfile estructura](images/Dockerfile.png)
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+```dockerfile
+# Stage 1: Build
+FROM node:18 as builder
+WORKDIR /app
+COPY package*.json ./
+RUN npm install
+COPY . .
+RUN npm run build
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+# Stage 2: Production
+FROM nginx:alpine
+COPY --from=builder /app/build /usr/share/nginx/html
+EXPOSE 80
+CMD ["nginx", "-g", "daemon off;"]
+```
 
-### `npm test`
+### 3. GitHub Actions Workflow
+Se configuró un workflow de CI/CD para automatizar la construcción y publicación de la imagen Docker:
+![GitHub Actions Workflow](images/workflows.png)
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+Se implementaron los siguientes pasos en el workflow:
+- **Checkout**: Se realizó la clonación del repositorio
+- **Docker set up buildx**: Se configuró el builder de Docker
+- **Docker login**: Se estableció la autenticación con GitHub Container Registry mediante secretos
+- **Docker Build and push**: Se ejecutó la construcción y publicación de la imagen
 
-### `npm run build`
+### 4. Secretos de GitHub
+Se configuraron los secretos necesarios en el repositorio para manejar la autenticación de forma segura:
+![GitHub Secrets](images/secrets.png)
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+### 5. Descarga de la Imagen
+Después de que el workflow publicó la imagen exitosamente, se descargó usando:
+![Docker Pull](images/download.png)
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+```bash
+docker pull ghcr.io/nicolas-cm/docker-test:latest
+```
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+### 6. Ejecución
+Se ejecutó la aplicación en el ambiente local con:
+![Docker Run](images/run.png)
 
-### `npm run eject`
+```bash
+docker run -p 80:80 ghcr.io/nicolas-cm/docker-test:latest
+```
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+### 7. Visualización Local
+Evidencia del contenedor corriendo localmente:
+![Local Development](images/local.png)
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+### 8. Publicación del Package
+Se generó y publicó exitosamente el package en GitHub Container Registry:
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+![Package publicado](images/packages.png)
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+## Arquitectura Implementada
+En la implementación se utilizó:
+- Aplicación React existente para el frontend
+- API de Rick and Morty para obtener los datos
+- Docker para contenerizar la aplicación
+- GitHub Actions para automatizar el CI/CD
+- GitHub Container Registry como repositorio de imágenes
 
-## Learn More
+![Docker Architecture](images/docker.png)
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+## Tecnologías Implementadas
+Para este proyecto se utilizaron:
+- Aplicación React 18 existente
+- Docker para la contenerización
+- GitHub Actions para la automatización
+- GitHub Container Registry para almacenar las imágenes
+- Nginx como servidor web en producción
